@@ -28,10 +28,30 @@ mongoose
  server.use(express.urlencoded({ extended: true }));
  server.use(express.json());
 
+ const convertToBook = (book) => {
+	return {
+	 id: book._id,
+	 title:book.title,
+	 author: book.author,
+	 isAvailable: book.isAvailable,   
+	 burrowedMemberId: book.burrowedMemberId,         
+	 burrowedDate: book.burrowedDate, 
+	};
+};
+
+const sendBook = async (res, id) => {
+	const book = await Book.findById(id); 
+	res.send(convertToBook(book)); 
+};
+
 // /book: View all books
 server.get("/book", async (req, res) => { 
 	const books = await Book.find();
-	res.send(books);
+	res.send(books.map((book) => {
+		return convertToBook(book); 
+	})
+	);
+	
 });
 
 // /book/1: View book 1 
@@ -39,8 +59,7 @@ server.get("/book", async (req, res) => {
 
 server.get("/book/:id", async (req, res) => {
 	const id = req.params.id; 
-	const book = await Book.findById(id); 
-	res.send(book); 
+	sendBook(res, id);
 }); 
 
 // /book : Post: Create book 
@@ -48,9 +67,15 @@ server.get("/book/:id", async (req, res) => {
 	server.post("/book", async (req, res) => {
 	const { title, author } = req.body;  
 
-const book = new Book({ title, author }); 
+const book = new Book({ 
+	title, 
+	author, 
+	isAvailable: true,   
+	burrowedMemberId: "",         
+	burrowedDate: "",  
+}); 
 const response = await book.save(); 
-res.send(response); 
+res.send(convertToBook(response)); 
 }); 
 
 // /book/:id/burrow: Burrow book 
@@ -64,7 +89,7 @@ server.put ("/book/:id/burrow", async (req, res) => {
 		burrowedMemberId,         
 		burrowedDate, 
 	}); 
-	res.send(book); 
+	sendBook(res, id);
 }); 
 
 // /book/:id/return: Return book 
@@ -76,7 +101,7 @@ server.put("/book/:id/return", async (req, res) => {
 		burrowedMemberId: "",         
 		burrowedDate: "", 
 	}); 
-	res.send(book);
+	sendBook(res, id);
 }); 
 
 
@@ -91,7 +116,7 @@ const book = await Book.findByIdAndUpdate(id, {
 	title,
 	author,
       });
-      res.send(book);
+	  sendBook(res, id);
 });
 
 // /book/:id: Delete: Delete book
