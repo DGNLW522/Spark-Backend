@@ -49,7 +49,7 @@ server.get("/book", async (req, res) => {
 	const books = await Book.find();
 	res.send(books.map((book) => {
 		return convertToBook(book); 
-	})
+	}) 
 	);
 	
 });
